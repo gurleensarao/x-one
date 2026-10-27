@@ -375,3 +375,4 @@ textarea.input { resize: none; }
 .opening small { font-size: 10px; letter-spacing: 1.5px; color: var(--muted); }
 .opening p { margin-top: 6px; font-size: 14px; line-height: 1.5; }
 .reassure { margin-top: 14px; font-size: 12px; color: var(--muted); }
+.path-card:disabled { opacity: 0.6; cursor: wait; }

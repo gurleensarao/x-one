@@ -32,11 +32,9 @@ function collectInputs() {
   };
 }
 
-// "Find my next move" saves the inputs
-document.querySelector('#screen-3 [data-goto="screen-4"]').addEventListener("click", () => {
-  state.inputs = collectInputs();
-  console.log("Saved inputs:", state.inputs);
-});
+// "Find my next move" asks the backend to write the story
+document.querySelector('#screen-3 [data-goto="screen-4"]').addEventListener("click", loadStory);
+
 // Tapping a path card on screen 4 opens screen 5 with that path's scene
 document.querySelectorAll(".path-card").forEach((card) => {
   card.addEventListener("click", () => {
@@ -131,13 +129,14 @@ document.querySelectorAll(".choice").forEach((c) =>
 document.querySelector('#screen-5 [data-goto="screen-6"]').addEventListener("click", renderReflection);
 
 // ---------- Screen 7: The First Move ----------
-function renderFirstMove() {
-  const letter = state.chosenPath || "A";
-  const m = STORY[letter === "A" ? "prompt4_path_a" : "prompt4_path_b"];
+let currentMove = null;
+
+function paintMove(letter, m) {
+  currentMove = m;
   document.getElementById("fm-greeting").textContent = m.greeting_line;
   document.getElementById("fm-letter").textContent = letter;
   document.getElementById("fm-path").textContent = PATH_NAMES[letter];
-  document.getElementById("fm-label").textContent = "FIRST MOVE · " + m.move_label.toUpperCase();
+  document.getElementById("fm-label").textContent = "FIRST MOVE · " + String(m.move_label).toUpperCase();
   document.getElementById("fm-time").textContent = "⏱ " + m.minutes + " min";
   document.getElementById("fm-title").textContent = m.title;
   document.getElementById("fm-desc").textContent = m.description;
@@ -145,12 +144,43 @@ function renderFirstMove() {
   document.getElementById("fm-reassure").textContent = "✦ " + m.reassurance;
 }
 
+async function renderFirstMove() {
+  const letter = state.chosenPath || "A";
+  const fallbackMove = FALLBACK[letter === "A" ? "prompt4_path_a" : "prompt4_path_b"];
+
+  // If the story came from the fallback, keep the whole journey consistent
+  if (state.source !== "ai") {
+    paintMove(letter, fallbackMove);
+    return;
+  }
+
+  // Loading state while the AI writes the first move
+  paintMove(letter, {
+    greeting_line: "", move_label: "", minutes: "…", title: "Finding your first move…",
+    description: "", opening_line: "", reassurance: "",
+  });
+
+  try {
+    const scene = STORY.prompt2[letter === "A" ? "path_a" : "path_b"].scene;
+    const m = await postJSON("/api/first-move", {
+      name: (state.inputs && state.inputs.name) || "",
+      chosen_path: letter,
+      profile_summary: STORY.prompt1.profile_summary,
+      chosen_scene: scene,
+    });
+    paintMove(letter, m);
+  } catch (err) {
+    console.warn("AI unavailable for the first move, using fallback:", err);
+    paintMove(letter, fallbackMove);
+  }
+}
+
 document.querySelector('#screen-6 [data-goto="screen-7"]').addEventListener("click", renderFirstMove);
 
 // Copy the opening line to the clipboard
 document.getElementById("copy-btn").addEventListener("click", async () => {
-  const letter = state.chosenPath || "A";
-  const text = STORY[letter === "A" ? "prompt4_path_a" : "prompt4_path_b"].opening_line;
+  const text = currentMove ? currentMove.opening_line : "";
+  if (!text) return;
   try {
     await navigator.clipboard.writeText(text);
   } catch (e) {
@@ -162,3 +192,55 @@ document.getElementById("copy-btn").addEventListener("click", async () => {
   btn.innerHTML = "Copied ✓";
   setTimeout(() => (btn.innerHTML = "Copy my message <span>⧉</span>"), 2000);
 });
+
+// ---------- Connect to the backend ----------
+const API_BASE = "http://127.0.0.1:8000"; // we change this to the live backend address when we deploy
+const FALLBACK = JSON.parse(JSON.stringify(STORY)); // Aarav's story, kept as the safety net
+
+async function postJSON(path, body, ms = 45000) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), ms);
+  try {
+    const res = await fetch(API_BASE + path, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+      signal: ctrl.signal,
+    });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    return await res.json();
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function setPathDescriptions(a, b) {
+  document.getElementById("pathA-desc").textContent = a;
+  document.getElementById("pathB-desc").textContent = b;
+}
+
+// Runs when the user presses "Find my next move" on screen 3
+async function loadStory() {
+  state.inputs = collectInputs();
+  console.log("Saved inputs:", state.inputs);
+
+  const cards = document.querySelectorAll(".path-card");
+  cards.forEach((c) => (c.disabled = true));
+  setPathDescriptions("Imagining your path…", "Imagining your path…");
+  Object.assign(STORY, JSON.parse(JSON.stringify(FALLBACK))); // start from the safety net
+
+  try {
+    const data = await postJSON("/api/story", state.inputs);
+    STORY.prompt1 = data.prompt1;
+    STORY.prompt2 = data.prompt2;
+    STORY.prompt3 = data.prompt3;
+    state.source = "ai";
+    console.log("Story written by AI");
+  } catch (err) {
+    console.warn("AI unavailable, using the fallback story:", err);
+    state.source = "fallback";
+  }
+
+  setPathDescriptions(STORY.prompt1.path_a_description, STORY.prompt1.path_b_description);
+  cards.forEach((c) => (c.disabled = false));
+}
