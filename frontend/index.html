@@ -195,12 +195,84 @@
 </section>
 
 <!-- Screen 6: placeholder for now -->
-<section id="screen-6" class="screen form-screen">
+<!-- Screen 6: Reflection & Insight -->
+<section id="screen-6" class="screen form-screen mist">
   <header class="topbar">
     <button class="back" data-goto="screen-5">←</button>
-    <div class="brand">X-one</div><span></span>
+    <div class="brand">X-one<small>Expand Possibilities</small></div>
+    <span class="step">06 / 06</span>
   </header>
-  <div class="center"><h2 class="title wide">Reflection &amp; Insight</h2><p class="muted">Coming next.</p></div>
+
+  <div class="center">
+    <p class="eyebrow">✦ THE X FACTOR</p>
+    <h2 class="title wide">Reflection &amp; Insight</h2>
+    <p class="muted">Pause with the futures you imagined.<br>Which one feels more like you?</p>
+  </div>
+
+  <div>
+    <h3 class="q-title">What feels right for you?</h3>
+    <p class="muted left">Not the perfect answer. Just the direction that resonates with who you are becoming.</p>
+  </div>
+
+  <button class="choice" data-choice="A">
+    <small>PATH A · THE KNOWN PATH</small>
+    <strong>Stay &amp; Rewrite</strong>
+    <span id="rf-a-line"></span>
+    <i class="tick">✓</i>
+  </button>
+
+  <button class="choice teal" data-choice="B">
+    <small>PATH B · THE UNKNOWN PATH</small>
+    <strong>Step &amp; Explore</strong>
+    <span id="rf-b-line"></span>
+    <i class="tick">✓</i>
+  </button>
+
+  <p class="reflect-q" id="rf-question"></p>
+
+  <p class="your-choice"><b>Your choice: <span id="rf-choice-name"></span></b><br>Your next chapters will follow this direction.</p>
+
+  <div class="bottom">
+    <button class="btn" data-goto="screen-7">Choose this journey <span>→</span></button>
+    <p class="footnote">Neither path is the right one. This story is yours.</p>
+  </div>
+</section>
+
+<!-- Screen 7: The First Move -->
+<section id="screen-7" class="screen form-screen">
+  <header class="topbar">
+    <button class="back" data-goto="screen-6">←</button>
+    <div class="brand">X-one<small>Expand Possibilities</small></div>
+    <span class="step">DAY 01</span>
+  </header>
+
+  <div class="center">
+    <p class="eyebrow">✦ YOUR JOURNEY BEGINS ✦</p>
+    <h2 class="title wide">The First Move</h2>
+    <p class="muted" id="fm-greeting"></p>
+  </div>
+
+  <div class="chosen-box">
+    <span class="letter" id="fm-letter">A</span>
+    <div><small>YOUR CHOSEN PATH</small><strong id="fm-path"></strong></div>
+    <i class="tick on">✓</i>
+  </div>
+
+  <article class="move-card">
+    <div class="move-top"><small id="fm-label"></small><small id="fm-time"></small></div>
+    <h3 id="fm-title"></h3>
+    <p class="muted left" id="fm-desc"></p>
+    <div class="opening">
+      <small>YOUR OPENING LINE</small>
+      <p id="fm-opening"></p>
+    </div>
+    <p class="reassure" id="fm-reassure"></p>
+  </article>
+
+  <div class="bottom">
+    <button class="btn" id="copy-btn">Copy my message <span>⧉</span></button>
+    <p class="footnote">Make it sound like you. Send it when you're ready.</p>
+  </div>
 </section>
 
   </main>

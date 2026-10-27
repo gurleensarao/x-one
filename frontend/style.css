@@ -321,3 +321,57 @@ textarea.input { resize: none; }
   .stage.play .scene-card, .stage.play .ghost, .sparkle, .scene-card::before { animation: none; }
   .scene-card { opacity: 1; }
 }
+/* ---------- Screens 6 and 7 ---------- */
+.mist::before {
+  background:
+    radial-gradient(ellipse at 50% 20%, rgba(90,160,170,0.35), transparent 60%),
+    radial-gradient(ellipse at 30% 55%, rgba(120,100,220,0.25), transparent 60%);
+}
+.q-title { font-family: var(--font-title); font-size: 26px; font-weight: 500; }
+.muted.left { text-align: left; }
+
+.choice {
+  position: relative; display: block; width: 100%; text-align: left; cursor: pointer;
+  padding: 18px 54px 18px 18px; border-radius: 18px; color: var(--text);
+  background: rgba(20,18,40,0.8); border: 1px solid rgba(255,255,255,0.15);
+  font-family: var(--font-body); transition: 0.2s;
+}
+.choice small { display: block; font-size: 10px; letter-spacing: 1.5px; color: var(--muted); }
+.choice.teal small { color: #7ee8d6; }
+.choice strong { display: block; font-family: var(--font-title); font-size: 28px; font-weight: 500; margin: 4px 0; }
+.choice span { font-size: 13px; color: var(--muted); }
+.tick {
+  position: absolute; right: 16px; top: 18px; width: 26px; height: 26px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; font-style: normal; font-size: 14px;
+  border: 1px solid rgba(255,255,255,0.3); color: transparent;
+}
+.choice.selected { border-color: var(--lavender); background: rgba(40,32,80,0.9); box-shadow: 0 0 18px rgba(157,132,224,0.35); }
+.choice.teal.selected { border-color: #7ee8d6; box-shadow: 0 0 18px rgba(90,210,190,0.35); }
+.choice.selected .tick { background: var(--lavender); color: #1a1330; border-color: var(--lavender); }
+.reflect-q { font-family: var(--font-title); font-style: italic; font-size: 18px; color: var(--lavender); text-align: center; }
+.your-choice { font-size: 13px; color: var(--muted); padding-left: 4px; }
+.your-choice b { color: var(--text); font-weight: 500; }
+
+.chosen-box {
+  position: relative; display: flex; align-items: center; gap: 14px; padding: 14px 18px;
+  border-radius: 16px; background: rgba(20,18,40,0.8); border: 1px solid rgba(255,255,255,0.15);
+}
+.chosen-box .letter {
+  width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center;
+  border: 1px solid rgba(255,255,255,0.3); font-family: var(--font-title); font-size: 20px;
+}
+.chosen-box small { display: block; font-size: 10px; letter-spacing: 1.5px; color: var(--muted); }
+.chosen-box strong { font-family: var(--font-title); font-size: 24px; font-weight: 500; }
+.chosen-box .tick { position: static; margin-left: auto; color: var(--text); border: none; font-size: 18px; }
+
+.move-card {
+  padding: 22px; border-radius: 20px; text-align: left;
+  background: rgba(14,12,32,0.85); border: 1px solid rgba(255,255,255,0.1);
+}
+.move-top { display: flex; justify-content: space-between; }
+.move-top small { font-size: 10px; letter-spacing: 1.5px; color: var(--muted); }
+.move-card h3 { font-family: var(--font-title); font-size: 34px; font-weight: 500; margin: 10px 0; }
+.opening { margin-top: 16px; padding: 14px; border-radius: 14px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.12); }
+.opening small { font-size: 10px; letter-spacing: 1.5px; color: var(--muted); }
+.opening p { margin-top: 6px; font-size: 14px; line-height: 1.5; }
+.reassure { margin-top: 14px; font-size: 12px; color: var(--muted); }

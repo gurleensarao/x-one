@@ -105,3 +105,60 @@ function burstSparkles(dir) {
 document.querySelectorAll(".tab").forEach((tab) => {
   tab.addEventListener("click", () => renderScene(tab.dataset.tab));
 });
+
+// ---------- Screen 6: Reflection & Insight ----------
+const PATH_NAMES = { A: "Stay & Rewrite", B: "Step & Explore" };
+
+function selectPath(letter) {
+  state.chosenPath = letter;
+  document.querySelectorAll(".choice").forEach((c) =>
+    c.classList.toggle("selected", c.dataset.choice === letter)
+  );
+  document.getElementById("rf-choice-name").textContent = PATH_NAMES[letter];
+}
+
+function renderReflection() {
+  const r = STORY.prompt3;
+  document.getElementById("rf-a-line").textContent = r.path_a_line;
+  document.getElementById("rf-b-line").textContent = r.path_b_line;
+  document.getElementById("rf-question").textContent = r.reflection_question;
+  selectPath(state.openPath || "A");
+}
+
+document.querySelectorAll(".choice").forEach((c) =>
+  c.addEventListener("click", () => selectPath(c.dataset.choice))
+);
+document.querySelector('#screen-5 [data-goto="screen-6"]').addEventListener("click", renderReflection);
+
+// ---------- Screen 7: The First Move ----------
+function renderFirstMove() {
+  const letter = state.chosenPath || "A";
+  const m = STORY[letter === "A" ? "prompt4_path_a" : "prompt4_path_b"];
+  document.getElementById("fm-greeting").textContent = m.greeting_line;
+  document.getElementById("fm-letter").textContent = letter;
+  document.getElementById("fm-path").textContent = PATH_NAMES[letter];
+  document.getElementById("fm-label").textContent = "FIRST MOVE · " + m.move_label.toUpperCase();
+  document.getElementById("fm-time").textContent = "⏱ " + m.minutes + " min";
+  document.getElementById("fm-title").textContent = m.title;
+  document.getElementById("fm-desc").textContent = m.description;
+  document.getElementById("fm-opening").textContent = "“" + m.opening_line + "”";
+  document.getElementById("fm-reassure").textContent = "✦ " + m.reassurance;
+}
+
+document.querySelector('#screen-6 [data-goto="screen-7"]').addEventListener("click", renderFirstMove);
+
+// Copy the opening line to the clipboard
+document.getElementById("copy-btn").addEventListener("click", async () => {
+  const letter = state.chosenPath || "A";
+  const text = STORY[letter === "A" ? "prompt4_path_a" : "prompt4_path_b"].opening_line;
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch (e) {
+    const t = document.createElement("textarea"); // fallback for older browsers
+    t.value = text; document.body.appendChild(t); t.select();
+    document.execCommand("copy"); t.remove();
+  }
+  const btn = document.getElementById("copy-btn");
+  btn.innerHTML = "Copied ✓";
+  setTimeout(() => (btn.innerHTML = "Copy my message <span>⧉</span>"), 2000);
+});
