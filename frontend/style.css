@@ -1,0 +1,92 @@
+:root {
+  --bg: #0a0a16;
+  --text: #f1edff;
+  --muted: #a9a3c4;
+  --lavender: #cbb8f5;
+  --lavender-dark: #9d84e0;
+  --font-title: "Cormorant Garamond", serif;
+  --font-body: "Inter", sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: #050509;
+  color: var(--text);
+  font-family: var(--font-body);
+}
+
+.app {
+  max-width: 430px;
+  min-height: 100vh;
+  margin: 0 auto;
+  background:
+    radial-gradient(circle at 50% 35%, rgba(120, 80, 210, 0.35), transparent 60%),
+    linear-gradient(180deg, #0a0a16 0%, #14102a 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.screen {
+  display: none;
+  min-height: 100vh;
+  padding: 48px 24px 32px;
+  flex-direction: column;
+  justify-content: space-between;
+  text-align: center;
+}
+.screen.active { display: flex; }
+
+.logo {
+  font-family: var(--font-title);
+  font-size: 64px;
+  font-weight: 600;
+  color: var(--lavender);
+  letter-spacing: 2px;
+}
+.tagline { color: var(--muted); margin-top: 4px; }
+
+.hero {
+  font-family: var(--font-title);
+  font-size: 52px;
+  font-weight: 500;
+  line-height: 1.05;
+  margin-top: 64px;
+}
+.sub { color: var(--muted); margin-top: 16px; }
+
+.divider {
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: var(--muted);
+  margin-bottom: 16px;
+}
+
+.btn {
+  width: 100%;
+  padding: 18px;
+  border: none;
+  border-radius: 18px;
+  background: linear-gradient(180deg, #ddd0fb, var(--lavender-dark));
+  color: #1a1330;
+  font-family: var(--font-title);
+  font-size: 22px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 0 24px rgba(157, 132, 224, 0.4);
+  transition: transform 0.15s;
+}
+.btn:hover { transform: translateY(-2px); }
+
+.footnote {
+  margin-top: 14px;
+  font-size: 12px;
+  font-style: italic;
+  color: var(--muted);
+}
+/* Screen 1 background image */
+#screen-1 {
+  background:
+    linear-gradient(180deg, rgba(10,10,22,0.85) 0%, rgba(10,10,22,0.15) 40%, rgba(10,10,22,0.9) 100%),
+    url("assets/s1-landscape.jpg") center / cover no-repeat;
+}

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>X-one · Exceptional Someone</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="app">
+
+    <!-- Screen 1: Welcome -->
+    <section id="screen-1" class="screen active">
+      <div class="welcome">
+        <h1 class="logo">X-one</h1>
+        <p class="tagline">Exceptional Someone</p>
+        <h2 class="hero">You Build<br>Your Life</h2>
+        <p class="sub">Every choice opens a new possibility.</p>
+      </div>
+      <div class="bottom">
+        <p class="divider">BECOME YOUR POSSIBILITY</p>
+        <button class="btn" data-goto="screen-2">Start <span>→</span></button>
+        <p class="footnote">These are possibilities not predictions</p>
+      </div>
+    </section>
+
+    <!-- Screen 2: placeholder, we build it next -->
+    <section id="screen-2" class="screen">
+      <div class="welcome">
+        <h2 class="hero">Screen 2</h2>
+        <p class="sub">Coming next.</p>
+      </div>
+      <div class="bottom">
+        <button class="btn" data-goto="screen-1"><span>←</span> Back</button>
+      </div>
+    </section>
+
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>
