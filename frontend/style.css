@@ -237,3 +237,87 @@ textarea.input { resize: none; }
 .path-card span { font-size: 13px; color: var(--muted); }
 .path-card i { position: absolute; right: 18px; top: 50%; transform: translateY(-50%); font-style: normal; font-size: 22px; }
 .path-card:hover { transform: translateY(-2px); }
+/* ---------- Screen 5: scene card ---------- */
+@property --angle { syntax: "<angle>"; initial-value: 0deg; inherits: false; }
+
+.path-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.tab {
+  text-align: left; padding: 14px; border-radius: 16px; cursor: pointer; color: var(--text);
+  background: rgba(20,18,40,0.8); border: 1px solid rgba(255,255,255,0.15);
+  font-family: var(--font-body);
+}
+.tab small { display: block; font-size: 10px; letter-spacing: 1.5px; color: var(--muted); }
+.tab strong { display: block; font-family: var(--font-title); font-size: 20px; font-weight: 500; margin: 2px 0; }
+.tab em { font-size: 11px; color: var(--muted); font-style: normal; }
+.tab.active { border-color: var(--lavender); box-shadow: 0 0 18px rgba(157,132,224,0.4); }
+.tab[data-tab="B"].active { border-color: #7ee8d6; box-shadow: 0 0 18px rgba(90,210,190,0.4); }
+
+.stage { --glow: 157,132,224; --from-x: -38%; position: relative; perspective: 1100px; margin: 6px 0; }
+.stage[data-path="B"] { --glow: 90,210,190; }
+
+.scene-card {
+  position: relative; z-index: 1; padding: 22px; border-radius: 20px; text-align: left;
+  background: rgba(14,12,32,0.92);
+  filter: drop-shadow(0 0 10px rgba(var(--glow), 0.35));
+}
+/* shimmering border that keeps circling the card */
+.scene-card::before {
+  content: ""; position: absolute; inset: -2px; border-radius: 22px; padding: 2px;
+  background: conic-gradient(from var(--angle), transparent 0%, rgb(var(--glow)) 12%, #ffffff 18%, transparent 35%, transparent 100%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude;
+  animation: spinBorder 3s linear infinite; pointer-events: none;
+}
+@keyframes spinBorder { to { --angle: 360deg; } }
+
+.scene-card small { font-size: 10px; letter-spacing: 1.5px; color: var(--muted); }
+.scene-card h3 { font-family: var(--font-title); font-size: 30px; font-weight: 500; line-height: 1.1; margin: 8px 0 12px; }
+.scene-card p { font-size: 14px; line-height: 1.55; color: #cfc9e6; }
+.scene-card hr { border: none; border-top: 1px solid rgba(255,255,255,0.12); margin: 16px 0; }
+.scene-card .upside { color: var(--text); font-weight: 500; margin-bottom: 8px; }
+.scene-card .challenge { color: var(--muted); }
+
+/* glow trail: ghost copies that lag behind the card and fade out */
+.ghost {
+  position: absolute; inset: 0; border-radius: 20px; opacity: 0; pointer-events: none; z-index: 0;
+  border: 1px solid rgba(var(--glow), 0.8);
+  background: rgba(var(--glow), 0.12);
+  box-shadow: 0 0 30px 6px rgba(var(--glow), 0.55);
+}
+
+/* the entrance: smooth spin + glow */
+.stage.play .scene-card { animation: emerge 1.5s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.stage.play .ghost { animation: ghostTrail 1.5s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.stage.play .g1 { animation-delay: 0.08s; }
+.stage.play .g2 { animation-delay: 0.16s; }
+.stage.play .g3 { animation-delay: 0.24s; }
+
+@keyframes emerge {
+  0%   { opacity: 0; transform: translateX(var(--from-x)) translateY(40px) scale(0.3) rotateY(-360deg);
+         filter: drop-shadow(0 0 0 rgba(var(--glow), 0)); }
+  55%  { opacity: 1; filter: drop-shadow(0 0 30px rgba(var(--glow), 0.95)); }
+  100% { opacity: 1; transform: none; filter: drop-shadow(0 0 10px rgba(var(--glow), 0.35)); }
+}
+@keyframes ghostTrail {
+  0%   { opacity: 0; transform: translateX(var(--from-x)) translateY(40px) scale(0.3) rotateY(-360deg); }
+  35%  { opacity: 0.55; }
+  100% { opacity: 0; transform: none; }
+}
+
+/* shimmer sparkles */
+.sparkle {
+  position: absolute; width: 6px; height: 6px; border-radius: 50%;
+  pointer-events: none; z-index: 2; opacity: 0;
+  box-shadow: 0 0 8px 2px rgba(203,184,245,0.9);
+  animation: sparkle 1.2s ease-out both;
+}
+@keyframes sparkle {
+  0%   { opacity: 0; transform: translate(0, 0) scale(0.3); }
+  25%  { opacity: 1; transform: translate(calc(var(--dx) * 0.3), calc(var(--dy) * 0.3)) scale(1); }
+  100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stage.play .scene-card, .stage.play .ghost, .sparkle, .scene-card::before { animation: none; }
+  .scene-card { opacity: 1; }
+}
