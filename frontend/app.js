@@ -318,3 +318,91 @@ document.getElementById("fill-demo").addEventListener("click", () => {
     c.classList.toggle("on", ["Money", "No clear path", "Confidence"].includes(c.textContent))
   );
 });
+// ---------- Saving progress in the browser (localStorage) ----------
+const STORE_KEY = "xone_v1";
+
+function loadSave() {
+  try { return JSON.parse(localStorage.getItem(STORE_KEY)) || {}; }
+  catch (e) { return {}; }
+}
+function writeSave(patch) {
+  try {
+    const merged = Object.assign(loadSave(), patch, { updated: Date.now() });
+    localStorage.setItem(STORE_KEY, JSON.stringify(merged));
+  } catch (e) { console.warn("Could not save progress:", e); }
+}
+function clearSave() {
+  try { localStorage.removeItem(STORE_KEY); } catch (e) {}
+}
+
+// Save automatically after the story is written (a new story starts a fresh journey)
+const _loadStory = loadStory;
+loadStory = async function () {
+  await _loadStory();
+  writeSave({
+    inputs: state.inputs,
+    story: { prompt1: STORY.prompt1, prompt2: STORY.prompt2, prompt3: STORY.prompt3 },
+    source: state.source,
+    chosenPath: null,
+    move: null,
+  });
+};
+
+// Save the first move once it has really been written
+const _paintMove = paintMove;
+paintMove = function (letter, m) {
+  _paintMove(letter, m);
+  if (m && m.opening_line) writeSave({ move: m });
+};
+
+// Save the path when the user presses "Choose this journey"
+document.querySelector('#screen-6 [data-goto="screen-7"]').addEventListener("click", () => {
+  writeSave({ chosenPath: state.chosenPath || "A" });
+});
+
+// ---------- Bring a saved journey back ----------
+function restoreFromSave() {
+  const s = loadSave();
+  if (!s.story) return;
+
+  state.inputs = s.inputs || {};
+  state.source = s.source || "fallback";
+  state.chosenPath = s.chosenPath || null;
+  Object.assign(STORY, s.story);
+
+  // Refill the form fields
+  const i = state.inputs;
+  const set = (id, v) => { document.getElementById(id).value = v || ""; };
+  set("f-name", i.name); set("f-age", i.age); set("f-job", i.job);
+  set("f-learned", i.work_learned); set("f-challenge", i.work_challenge); set("f-custom", i.custom_blocker);
+  if (i.qualification) set("f-qual", i.qualification);
+  skillList = (i.skills || []).slice();
+  renderSkills();
+  document.querySelectorAll("#blockers .chip").forEach((c) =>
+    c.classList.toggle("on", (i.blockers || []).includes(c.textContent))
+  );
+
+  setPathDescriptions(STORY.prompt1.path_a_description, STORY.prompt1.path_b_description);
+
+  if (s.chosenPath && s.move) {
+    paintMove(s.chosenPath, s.move);
+    showScreen("screen-7");
+  } else {
+    showScreen("screen-4");
+  }
+}
+
+// Show the Continue and Start over buttons only if something is saved
+(function () {
+  const s = loadSave();
+  if (s.story) {
+    document.getElementById("continue-btn").style.display = "block";
+    document.getElementById("reset-btn").style.display = "block";
+  }
+})();
+
+document.getElementById("continue-btn").addEventListener("click", restoreFromSave);
+document.getElementById("reset-btn").addEventListener("click", () => {
+  clearSave();
+  location.reload();
+});

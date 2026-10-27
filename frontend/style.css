@@ -376,3 +376,12 @@ textarea.input { resize: none; }
 .opening p { margin-top: 6px; font-size: 14px; line-height: 1.5; }
 .reassure { margin-top: 14px; font-size: 12px; color: var(--muted); }
 .path-card:disabled { opacity: 0.6; cursor: wait; }
+/* Continue / start over (Screen 1) */
+.btn.ghost {
+  margin-top: 12px;
+  background: rgba(20, 18, 40, 0.7);
+  color: var(--lavender);
+  border: 1px solid rgba(157, 132, 224, 0.6);
+  box-shadow: none;
+}
+#reset-btn { display: block; margin: 10px auto 0; }
