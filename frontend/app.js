@@ -194,10 +194,10 @@ document.getElementById("copy-btn").addEventListener("click", async () => {
 });
 
 // ---------- Connect to the backend ----------
-const API_BASE = "http://127.0.0.1:8000"; // we change this to the live backend address when we deploy
+const API_BASE = "https://x-one-api.onrender.com"; // we change this to the live backend address when we deploy
 const FALLBACK = JSON.parse(JSON.stringify(STORY)); // Aarav's story, kept as the safety net
 
-async function postJSON(path, body, ms = 45000) {
+async function postJSON(path, body, ms = 70000) {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), ms);
   try {
