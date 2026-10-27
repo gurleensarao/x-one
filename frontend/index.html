@@ -43,40 +43,44 @@
   </div>
 
   <div class="form">
-    <p class="eyebrow">YOUR CHARACTER SHEET</p>
+  <p class="eyebrow">YOUR CHARACTER SHEET</p>
+  <button type="button" class="link-btn" id="fill-demo">✦ Try it with an example story (Aarav)</button>
 
-    <label class="label">What shall the universe call you?</label>
-    <div class="row">
-      <input id="f-name" class="input" value="Aarav">
-      <input id="f-age" class="input age" value="27">
-    </div>
-
-    <label class="label">Qualification</label>
-    <select id="f-qual" class="input">
-      <option>10+2 (Non-Medical), B.Tech CSE</option>
-      <option>Bachelor's degree</option>
-      <option>Master's degree</option>
-      <option>Other</option>
-    </select>
-
-    <label class="label">Job description</label>
-    <textarea id="f-job" class="input" rows="3">Data analyst at a US-based company, working from home. Four years on the same client.</textarea>
-
-    <label class="label">Current Skill-set</label>
-    <div class="chips" id="skills">
-      <span class="chip">Data Analytics</span>
-      <span class="chip">Power BI</span>
-      <span class="chip">Advanced DAX</span>
-      <span class="chip">Storytelling</span>
-      <span class="chip">Excel + VBA</span>
-      <span class="chip">Python</span>
-    </div>
+  <label class="label">What shall the universe call you?</label>
+  <div class="row">
+    <input id="f-name" class="input" placeholder="e.g. Aarav">
+    <input id="f-age" class="input age" placeholder="Age" inputmode="numeric">
   </div>
 
-  <div class="bottom">
-    <button class="btn" data-goto="screen-3">Meet my possibilities <span>→</span></button>
-    <p class="footnote">No perfect answers. Just your very human magic.</p>
+  <label class="label">Qualification</label>
+  <select id="f-qual" class="input">
+    <option value="" disabled selected>Select your qualification</option>
+    <option>10th pass</option>
+    <option>12th pass</option>
+    <option>Diploma</option>
+    <option>Bachelor's degree</option>
+    <option>Master's degree</option>
+    <option>PhD</option>
+    <option>Other</option>
+  </select>
+
+  <label class="label">Job description</label>
+  <textarea id="f-job" class="input" rows="3" placeholder="e.g. Data analyst at a software company, working from home. Four years in the same role."></textarea>
+
+  <label class="label">Current Skill-set</label>
+  <div class="chips" id="skills"></div>
+  <div class="row" style="margin-top:10px">
+    <input id="skill-input" class="input" placeholder="Add a skill, e.g. Excel">
+    <button type="button" class="add-btn" id="skill-add">Add</button>
   </div>
+</div>
+
+<div class="bottom">
+  <p class="err" id="err-s2"></p>
+  <button class="btn" id="next-s2">Meet my possibilities <span>→</span></button>
+  <p class="footnote">No perfect answers. Just your very human magic.</p>
+</div>
+  
 </section>
 <!-- Screen 3: Plot-Twist journal -->
 <section id="screen-3" class="screen form-screen">
@@ -94,28 +98,29 @@
     <p class="muted">No epic essays. A few honest lines.</p>
   </div>
 
-  <div class="form">
-    <label class="label">What did work teach you? <small class="tag">THEN</small></label>
-    <textarea id="f-learned" class="input" rows="3">You're on your own. Everything needs written proof. You're expected to be flawless, even on your first try.</textarea>
+<div class="form">
+  <label class="label">What did work teach you? <small class="tag">THEN</small></label>
+  <textarea id="f-learned" class="input" rows="3" placeholder="A work experience that stayed with me…"></textarea>
 
-    <label class="label">What needs a little magic? <small class="tag">NOW</small></label>
-    <textarea id="f-challenge" class="input" rows="3">My client bothers me most. My skills are rusting on a simple client, and my managers don't seem confident enough to change it.</textarea>
+  <label class="label">What needs a little magic? <small class="tag">NOW</small></label>
+  <textarea id="f-challenge" class="input" rows="3" placeholder="Right now, I'd like to change…"></textarea>
 
-    <label class="label">What's blocking your next move? <small class="tag">NEXT</small></label>
-    <div class="chips" id="blockers">
-      <span class="chip">Overthinking</span>
-      <span class="chip">Time</span>
-      <span class="chip on">Money</span>
-      <span class="chip on">No clear path</span>
-      <span class="chip on">Confidence</span>
-    </div>
-    <textarea id="f-custom" class="input" rows="2" style="margin-top:12px">My 90-day notice period means other companies may not wait, and I fear losing my gym and diet routine.</textarea>
+  <label class="label">What's blocking your next move? <small class="tag">NEXT</small></label>
+  <div class="chips" id="blockers">
+    <span class="chip">Overthinking</span>
+    <span class="chip">Time</span>
+    <span class="chip">Money</span>
+    <span class="chip">No clear path</span>
+    <span class="chip">Confidence</span>
   </div>
+  <textarea id="f-custom" class="input" rows="2" style="margin-top:12px" placeholder="Or put your own dragon into words…"></textarea>
+</div>
 
-  <div class="bottom">
-    <button class="btn" data-goto="screen-4">Find my next move <span>→</span></button>
-    <p class="footnote">Your pace. Your story. You can edit this later.</p>
-  </div>
+<div class="bottom">
+  <p class="err" id="err-s3"></p>
+  <button class="btn" id="next-s3">Find my next move <span>→</span></button>
+  <p class="footnote">Your pace. Your story. You can edit this later.</p>
+</div>
 </section>
 
 <!-- Screen 4: Crossroads -->

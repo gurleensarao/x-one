@@ -24,7 +24,7 @@ function collectInputs() {
     age: document.getElementById("f-age").value,
     qualification: document.getElementById("f-qual").value,
     job: document.getElementById("f-job").value,
-    skills: [...document.querySelectorAll("#skills .chip")].map((c) => c.textContent),
+    skills: skillList.slice(),
     work_learned: document.getElementById("f-learned").value,
     work_challenge: document.getElementById("f-challenge").value,
     blockers: [...document.querySelectorAll("#blockers .chip.on")].map((c) => c.textContent),
@@ -33,7 +33,6 @@ function collectInputs() {
 }
 
 // "Find my next move" asks the backend to write the story
-document.querySelector('#screen-3 [data-goto="screen-4"]').addEventListener("click", loadStory);
 
 // Tapping a path card on screen 4 opens screen 5 with that path's scene
 document.querySelectorAll(".path-card").forEach((card) => {
@@ -244,3 +243,78 @@ async function loadStory() {
   setPathDescriptions(STORY.prompt1.path_a_description, STORY.prompt1.path_b_description);
   cards.forEach((c) => (c.disabled = false));
 }
+// ---------- Skills: add and remove ----------
+let skillList = [];
+
+function renderSkills() {
+  const box = document.getElementById("skills");
+  box.innerHTML = "";
+  skillList.forEach((s, i) => {
+    const chip = document.createElement("span");
+    chip.className = "chip on";
+    chip.textContent = s;
+    const x = document.createElement("b");
+    x.className = "x";
+    x.textContent = "×";
+    x.addEventListener("click", () => { skillList.splice(i, 1); renderSkills(); });
+    chip.appendChild(x);
+    box.appendChild(chip);
+  });
+}
+
+function addSkill() {
+  const input = document.getElementById("skill-input");
+  const v = input.value.trim();
+  if (v && skillList.length < 12 && !skillList.some((s) => s.toLowerCase() === v.toLowerCase())) {
+    skillList.push(v.slice(0, 40));
+    renderSkills();
+  }
+  input.value = "";
+}
+
+document.getElementById("skill-add").addEventListener("click", addSkill);
+document.getElementById("skill-input").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") { e.preventDefault(); addSkill(); }
+});
+
+// ---------- Moving on from screens 2 and 3 (with a check) ----------
+document.getElementById("next-s2").addEventListener("click", () => {
+  addSkill(); // keep a skill that was typed but not added yet
+  const err = document.getElementById("err-s2");
+  const name = document.getElementById("f-name").value.trim();
+  const job = document.getElementById("f-job").value.trim();
+  if (!name || !job) {
+    err.textContent = "Please add your name and a line about your current job.";
+    return;
+  }
+  err.textContent = "";
+  showScreen("screen-3");
+});
+
+document.getElementById("next-s3").addEventListener("click", () => {
+  const err = document.getElementById("err-s3");
+  if (!document.getElementById("f-challenge").value.trim()) {
+    err.textContent = "Tell us in a line or two what you'd like to change.";
+    return;
+  }
+  err.textContent = "";
+  showScreen("screen-4");
+  loadStory();
+});
+
+// ---------- Example story button (fills Aarav's details) ----------
+document.getElementById("fill-demo").addEventListener("click", () => {
+  const set = (id, v) => (document.getElementById(id).value = v);
+  set("f-name", "Aarav");
+  set("f-age", "27");
+  set("f-qual", "Bachelor's degree");
+  set("f-job", "Data analyst at a US-based company, working from home. Four years on the same client.");
+  skillList = ["Data Analytics", "Power BI", "Advanced DAX", "Storytelling", "Excel + VBA", "Python"];
+  renderSkills();
+  set("f-learned", "You're on your own. Everything needs written proof. You're expected to be flawless, even on your first try.");
+  set("f-challenge", "My client bothers me most. My skills are rusting on a simple client, and my managers don't seem confident enough to change it.");
+  set("f-custom", "My 90-day notice period means other companies may not wait, and I fear losing my gym and diet routine.");
+  document.querySelectorAll("#blockers .chip").forEach((c) =>
+    c.classList.toggle("on", ["Money", "No clear path", "Confidence"].includes(c.textContent))
+  );
+});
