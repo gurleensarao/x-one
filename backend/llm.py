@@ -78,21 +78,21 @@ def fill(template, values):
     return template
 
 
-def call_gemini(prompt, temperature=0.7):
+def call_gemini(prompt, temperature=0.7, max_tokens=2048):
     body = {
         "systemInstruction": {"parts": [{"text": SHARED_RULES}]},
         "contents": [{"role": "user", "parts": [{"text": prompt}]}],
         "generationConfig": {
             "temperature": temperature,
             "responseMimeType": "application/json",
-            "maxOutputTokens": 2048,
+            "maxOutputTokens": max_tokens,
         },
     }
     r = httpx.post(
         URL,
         headers={"x-goog-api-key": API_KEY, "Content-Type": "application/json"},
         json=body,
-        timeout=40,
+        timeout=60,
     )
     r.raise_for_status()
     parts = r.json()["candidates"][0]["content"]["parts"]
@@ -165,3 +165,152 @@ def generate_first_move(name, chosen_path, profile_summary, chosen_scene):
         {"greeting_line": [], "move_label": [], "title": [], "description": [],
          "minutes": [], "opening_line": [], "reassurance": []},
     )
+
+
+# ---------- Goals and quests ----------
+class GoalRefused(Exception):
+    pass
+
+
+PROMPT_GOALS = """Profile: {{profile_summary}}
+Chosen path: {{chosen_path}} (A = stay and grow where they are, B = step and explore new roles)
+Their first move: {{first_move_title}}
+
+Suggest exactly 3 REAL-LIFE goals this person could pursue over the next few weeks.
+Each goal must be concrete and achievable, fit their constraints, and follow from the path they chose.
+Make the three goals different from each other (for example: a skill, a project, an opportunity).
+
+Return JSON with exactly this key:
+goals (a list of 3 objects, each with title (8 words or fewer) and why (one sentence, 20 words or fewer))"""
+
+PROMPT_QUEST = """Person: {{name}}
+Profile: {{profile_summary}}
+Skills: {{skills}}
+Chosen path: {{chosen_path}} (A = stay and grow, B = step and explore)
+Goal: {{goal}}
+
+Design a REAL-WORLD mission chain for this goal. These are real actions in their real life, not fiction or a game story.
+Rules:
+- Use as many levels as the goal truly needs, between 4 and 6. Do not pad.
+- Each level builds on the one before and is harder than the last.
+- Level 1 must be a micro-mission doable in 10 to 15 minutes.
+- Use imperative instructions (Do this, Write that). Do not use "might" or "could" here.
+- Each level has an objective (one sentence), 2 to 4 concrete instructions, and 0 to 2 resources.
+- A resource is a label plus a search phrase for a web search. NEVER write a URL.
+- Evidence must match the task. Use "link" for a project, repository, document or page they can share by link. Use "reflection" for planning, learning or conversations (written text). Use "checklist" for simple actions such as sending an email. Do not demand a certificate unless the task is a course that issues one.
+- xp: a whole number from 50 to 300, rising with difficulty. minutes: a realistic whole number.
+- Do not include a final "advance" level. The app adds it.
+- No real company, school or person names.
+- If the goal involves harming anyone, self-harm or anything illegal, return {"refused": true} and nothing else.
+
+Return JSON with exactly these keys:
+goal (the goal in 10 words or fewer), title (a short quest title),
+levels (a list of objects, each with: title, minutes, xp, objective, instructions (list of strings),
+resources (list of objects with label and search), evidence (object))
+The evidence object has: kind ("link", "reflection" or "checklist"), prompt (what to submit, one sentence),
+and then for "reflection" a min_chars number (80 to 200), for "link" a link_hint string like "https://...",
+for "checklist" an items list of 2 to 4 short strings."""
+
+
+def _int(value, low, high, default):
+    try:
+        n = int(float(value))
+    except Exception:
+        n = default
+    return max(low, min(high, n))
+
+
+def _texts(items, limit, maxlen):
+    if not isinstance(items, list):
+        return []
+    return [str(t).strip()[:maxlen] for t in items if str(t).strip()][:limit]
+
+
+def clean_quest(data):
+    """Check the AI's quest and rebuild it in the exact shape the app expects."""
+    if data.get("refused"):
+        raise GoalRefused("goal not supported")
+    levels = data.get("levels")
+    if not isinstance(levels, list) or not (3 <= len(levels) <= 7):
+        raise ValueError("bad level count")
+
+    out = []
+    for i, lv in enumerate(levels[:6], start=1):
+        ev = lv.get("evidence") or {}
+        kind = ev.get("kind")
+        if kind not in ("link", "reflection", "checklist"):
+            raise ValueError("bad evidence kind")
+        evidence = {"kind": kind, "prompt": str(ev.get("prompt", "Submit your evidence."))[:200]}
+        if kind == "reflection":
+            evidence["min_chars"] = _int(ev.get("min_chars"), 60, 250, 100)
+        elif kind == "link":
+            evidence["link_hint"] = "https://..."
+        else:
+            items = _texts(ev.get("items"), 4, 80)
+            if len(items) < 2:
+                raise ValueError("checklist needs items")
+            evidence["items"] = items
+
+        resources = []
+        for r in (lv.get("resources") or [])[:2]:
+            if isinstance(r, dict) and r.get("label") and r.get("search"):
+                resources.append({"label": str(r["label"])[:80], "search": str(r["search"])[:100]})
+
+        instructions = _texts(lv.get("instructions"), 4, 200)
+        if not lv.get("title") or not lv.get("objective") or len(instructions) < 2:
+            raise ValueError("level incomplete")
+
+        out.append({
+            "id": "l" + str(i), "number": i, "type": "step",
+            "title": str(lv["title"])[:60],
+            "minutes": _int(lv.get("minutes"), 5, 600, 30),
+            "xp": _int(lv.get("xp"), 50, 300, 100),
+            "objective": str(lv["objective"])[:200],
+            "instructions": instructions,
+            "resources": resources,
+            "evidence": evidence,
+        })
+
+    n = len(out) + 1
+    out.append({
+        "id": "l" + str(n), "number": n, "type": "advance", "title": "Advance",
+        "minutes": 0, "xp": 0, "placeholder": True,
+        "objective": "Unlocks after your last mission: a harder mission chosen from how it went.",
+        "instructions": [], "resources": [], "evidence": {"kind": "none", "prompt": ""},
+    })
+    return {"goal": str(data.get("goal", ""))[:100], "title": str(data.get("title", ""))[:80], "levels": out}
+
+
+def generate_goals(profile_summary, chosen_path, first_move_title):
+    prompt = fill(PROMPT_GOALS, {
+        "profile_summary": profile_summary,
+        "chosen_path": chosen_path,
+        "first_move_title": first_move_title,
+    })
+    last = None
+    for _ in range(2):
+        try:
+            data = call_gemini(prompt, 0.8)
+            goals = data["goals"]
+            if not isinstance(goals, list) or len(goals) < 3:
+                raise ValueError("need 3 goals")
+            return {"goals": [{"title": str(g["title"])[:70], "why": str(g["why"])[:160]} for g in goals[:3]]}
+        except Exception as e:
+            last = e
+    raise RuntimeError("AI call failed: " + str(last))
+
+
+def generate_quest(name, profile_summary, skills, chosen_path, goal):
+    prompt = fill(PROMPT_QUEST, {
+        "name": name, "profile_summary": profile_summary, "skills": skills,
+        "chosen_path": chosen_path, "goal": goal,
+    })
+    last = None
+    for _ in range(2):
+        try:
+            return clean_quest(call_gemini(prompt, 0.7, max_tokens=4096))
+        except GoalRefused:
+            raise
+        except Exception as e:
+            last = e
+    raise RuntimeError("AI call failed: " + str(last))

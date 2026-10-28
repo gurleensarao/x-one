@@ -17,8 +17,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Safety counter: after this many AI runs in a day, the app serves the fallback story
-DAILY_LIMIT = 100
+# Safety counter: after this many AI calls in a day, the app serves the fallback story
+DAILY_LIMIT = 250
 usage = {"day": date.today().isoformat(), "count": 0}
 
 
@@ -51,6 +51,20 @@ class FirstMoveRequest(BaseModel):
     chosen_scene: str = ""
 
 
+class GoalsRequest(BaseModel):
+    profile_summary: str = ""
+    chosen_path: str = "A"
+    first_move_title: str = ""
+
+
+class QuestRequest(BaseModel):
+    name: str = ""
+    profile_summary: str = ""
+    skills: List[str] = []
+    chosen_path: str = "A"
+    goal: str = ""
+
+
 @app.get("/health")
 def health():
     return {"status": "ok", "ai_runs_today": usage["count"]}
@@ -76,5 +90,28 @@ def first_move(req: FirstMoveRequest):
         return llm.generate_first_move(
             req.name[:60], req.chosen_path, req.profile_summary[:1200], req.chosen_scene[:1200]
         )
+    except Exception as e:
+        raise HTTPException(status_code=502, detail="AI unavailable: " + str(e)[:200])
+
+
+@app.post("/api/goals")
+def goals(req: GoalsRequest):
+    check_budget()
+    try:
+        return llm.generate_goals(req.profile_summary[:1200], req.chosen_path, req.first_move_title[:200])
+    except Exception as e:
+        raise HTTPException(status_code=502, detail="AI unavailable: " + str(e)[:200])
+
+
+@app.post("/api/quest")
+def quest(req: QuestRequest):
+    check_budget()
+    goal = req.goal.strip()[:200]
+    if len(goal) < 3:
+        raise HTTPException(status_code=422, detail="Please describe your goal")
+    try:
+        return llm.generate_quest(req.name[:60], req.profile_summary[:1200], req.skills[:12], req.chosen_path, goal)
+    except llm.GoalRefused:
+        raise HTTPException(status_code=422, detail="goal_not_supported")
     except Exception as e:
         raise HTTPException(status_code=502, detail="AI unavailable: " + str(e)[:200])
