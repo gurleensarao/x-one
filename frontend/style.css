@@ -394,3 +394,41 @@ textarea.input { resize: none; }
   margin-top: 12px; background: rgba(20, 18, 40, 0.7); color: var(--lavender);
   border: 1px solid rgba(157, 132, 224, 0.6); box-shadow: none;
 }
+/* Quest picker and preview */
+#goal-list { display: flex; flex-direction: column; gap: 12px; }
+#goal-note { font-size: 12px; text-align: left; }
+.choice strong { padding-right: 8px; }
+#q-levels { display: flex; flex-direction: column; gap: 10px; }
+.lv {
+  display: flex; align-items: center; gap: 14px; padding: 14px 16px; border-radius: 16px;
+  background: rgba(20,18,40,0.8); border: 1px solid rgba(255,255,255,0.12);
+}
+.lv .n {
+  width: 34px; height: 34px; border-radius: 50%; flex: none; display: flex; align-items: center;
+  justify-content: center; border: 1px solid rgba(255,255,255,0.3); font-family: var(--font-title); font-size: 18px;
+}
+.lv .t { flex: 1; text-align: left; }
+.lv .t strong { display: block; font-family: var(--font-title); font-size: 20px; font-weight: 500; }
+.lv .t small { font-size: 11px; color: var(--muted); }
+.lv.active { border-color: var(--lavender); box-shadow: 0 0 18px rgba(157,132,224,0.35); }
+.lv.locked { opacity: 0.55; }
+/* Missions */
+.lv { cursor: pointer; }
+.lv.accepted { border-color: #7ee8d6; box-shadow: 0 0 14px rgba(90,210,190,0.3); }
+.lv.needs_changes { border-color: #ffb86b; }
+.move-card .lbl { display: block; font-size: 10px; letter-spacing: 1.5px; color: var(--muted); margin-top: 10px; }
+.move-card ol { padding-left: 18px; margin: 8px 0 12px; font-size: 14px; line-height: 1.55; }
+.move-card p { font-size: 14px; line-height: 1.5; }
+.res { display: block; margin: 6px 0; font-size: 14px; color: var(--lavender); }
+.confirm { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; color: var(--muted); margin-top: 12px; }
+.chk-row { display: flex; gap: 10px; align-items: flex-start; margin: 8px 0; font-size: 14px; }
+.status-note { font-size: 13px; color: var(--muted); text-align: center; padding: 0 8px; }
+.status-note.good { color: #7ee8d6; }
+.status-note.warn { color: #ffb86b; }
+.count { display: block; font-size: 11px; color: var(--muted); margin-top: 4px; text-align: right; }
+.toast {
+  position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%); z-index: 99999;
+  background: rgba(30,24,60,0.97); border: 1px solid var(--lavender); color: var(--text);
+  padding: 12px 18px; border-radius: 14px; font-size: 14px; max-width: 86%; text-align: center;
+  box-shadow: 0 0 24px rgba(157,132,224,0.5);
+}

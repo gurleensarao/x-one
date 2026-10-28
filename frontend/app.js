@@ -193,7 +193,10 @@ document.getElementById("copy-btn").addEventListener("click", async () => {
 });
 
 // ---------- Connect to the backend ----------
-const API_BASE = "https://x-one-api.onrender.com"; // we change this to the live backend address when we deploy
+// Local file or localhost -> your own backend. Anywhere else (Netlify) -> Render.
+const API_BASE = (location.protocol === "file:" || location.hostname === "127.0.0.1" || location.hostname === "localhost")
+  ? "http://127.0.0.1:8000"
+  : "https://x-one-api.onrender.com";
 const FALLBACK = JSON.parse(JSON.stringify(STORY)); // Aarav's story, kept as the safety net
 
 async function postJSON(path, body, ms = 70000) {
@@ -339,12 +342,17 @@ function clearSave() {
 const _loadStory = loadStory;
 loadStory = async function () {
   await _loadStory();
+  state.quest = null; state.progress = {};
   writeSave({
     inputs: state.inputs,
     story: { prompt1: STORY.prompt1, prompt2: STORY.prompt2, prompt3: STORY.prompt3 },
     source: state.source,
     chosenPath: null,
     move: null,
+    chosenPath: null,
+    move: null,
+    quest: null,
+    progress: {},
   });
 };
 
@@ -383,7 +391,13 @@ function restoreFromSave() {
   );
 
   setPathDescriptions(STORY.prompt1.path_a_description, STORY.prompt1.path_b_description);
-
+    if (s.quest) {
+    state.quest = s.quest;
+    state.progress = s.progress || {};
+    renderQuestPreview();
+    showScreen("screen-9");
+    return;
+  }
   if (s.chosenPath && s.move) {
     paintMove(s.chosenPath, s.move);
     showScreen("screen-7");
@@ -420,3 +434,365 @@ function buildContinueButtons() {
 }
 buildContinueButtons();
 window.addEventListener("pageshow", buildContinueButtons);
+// ---------- Screen 8: choose your quest ----------
+let chosenGoal = "";
+
+function selectGoal(title) {
+  chosenGoal = title;
+  document.querySelectorAll("#goal-list .choice").forEach((c) =>
+    c.classList.toggle("selected", c.dataset.title === title)
+  );
+}
+
+function drawGoals(goals, note) {
+  const box = document.getElementById("goal-list");
+  box.innerHTML = "";
+  goals.forEach((g) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "choice";
+    b.dataset.title = g.title;
+    const s = document.createElement("strong");
+    s.textContent = g.title;
+    const p = document.createElement("span");
+    p.textContent = g.why;
+    const t = document.createElement("i");
+    t.className = "tick";
+    t.textContent = "✓";
+    b.append(s, p, t);
+    b.addEventListener("click", () => {
+      document.getElementById("goal-own").value = "";
+      selectGoal(g.title);
+    });
+    box.appendChild(b);
+  });
+  document.getElementById("goal-note").textContent = note || "";
+}
+
+async function openQuestPicker() {
+   if (state.quest) { renderQuestPreview(); showScreen("screen-9"); return; }
+  showScreen("screen-8");
+  chosenGoal = "";
+  document.getElementById("err-s8").textContent = "";
+  const box = document.getElementById("goal-list");
+
+  if (state.source !== "ai") {
+    drawGoals(
+      [{ title: QUEST_FALLBACK.goal, why: "An example quest for the demo story (Aarav)." }],
+      "The AI is unavailable right now, so only the example quest can be used."
+    );
+    return;
+  }
+
+  box.innerHTML = '<p class="muted">Finding goals that fit your story…</p>';
+  try {
+    const data = await postJSON("/api/goals", {
+      profile_summary: STORY.prompt1.profile_summary,
+      chosen_path: state.chosenPath || "A",
+      first_move_title: currentMove ? currentMove.title : "",
+    });
+    drawGoals(data.goals, "");
+  } catch (e) {
+    console.warn("Could not fetch goals:", e);
+    box.innerHTML = '<p class="muted">Could not fetch suggestions. Type your own goal below.</p>';
+  }
+}
+
+document.getElementById("to-quest").addEventListener("click", openQuestPicker);
+document.getElementById("goal-own").addEventListener("input", () => {
+  chosenGoal = "";
+  document.querySelectorAll("#goal-list .choice").forEach((c) => c.classList.remove("selected"));
+});
+
+async function buildQuest() {
+  const own = document.getElementById("goal-own").value.trim();
+  const goal = own || chosenGoal;
+  const err = document.getElementById("err-s8");
+  if (goal.length < 3) { err.textContent = "Pick a goal or type your own."; return; }
+  if (state.source !== "ai" && goal !== QUEST_FALLBACK.goal) {
+    err.textContent = "The AI is unavailable, so only the example quest can be used right now.";
+    return;
+  }
+  err.textContent = "";
+
+  const btn = document.getElementById("build-quest");
+  btn.disabled = true;
+  btn.textContent = "Designing your missions…";
+  try {
+    let quest;
+    if (state.source !== "ai") {
+      quest = JSON.parse(JSON.stringify(QUEST_FALLBACK));
+    } else {
+      quest = await postJSON("/api/quest", {
+        name: (state.inputs && state.inputs.name) || "",
+        profile_summary: STORY.prompt1.profile_summary,
+        skills: (state.inputs && state.inputs.skills) || [],
+        chosen_path: state.chosenPath || "A",
+        goal: goal,
+      }, 90000);
+    }
+    state.quest = quest;
+    writeSave({ quest: quest });
+    renderQuestPreview();
+    showScreen("screen-9");
+  } catch (e) {
+    console.warn("Quest failed:", e);
+    err.textContent = String(e.message).includes("422")
+      ? "That goal is not something we can build a quest for. Try a different one."
+      : "We could not build your quest just now. Please try again.";
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = "Build my quest <span>→</span>";
+  }
+}
+document.getElementById("build-quest").addEventListener("click", buildQuest);
+
+// ---------- Quest progress and missions ----------
+state.progress = state.progress || {};
+let missionIndex = 0;
+const byId = (id) => document.getElementById(id);
+
+function toast(msg) {
+  const t = document.createElement("div");
+  t.className = "toast";
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2800);
+}
+
+// Step 8 will replace this with the big celebration
+function celebrate(lv) {
+  toast("MISSION COMPLETE! +" + lv.xp + " XP");
+}
+
+function levelStatus(i) {
+  const q = state.quest;
+  const lv = q.levels[i];
+  const p = state.progress[lv.id];
+  if (p && p.status === "accepted") return "accepted";
+  const unlocked = i === 0 || (state.progress[q.levels[i - 1].id] || {}).status === "accepted";
+  if (!unlocked) return "locked";
+  return p && p.status === "needs_changes" ? "needs_changes" : "active";
+}
+
+function totalXP() {
+  if (!state.quest) return 0;
+  return state.quest.levels.reduce((sum, lv) => {
+    const p = state.progress[lv.id];
+    return sum + (p && p.status === "accepted" ? lv.xp : 0);
+  }, 0);
+}
+
+function renderQuestPreview() {
+  const q = state.quest;
+  const maxXp = q.levels.reduce((s, l) => s + l.xp, 0);
+  byId("q-title").textContent = q.title;
+  byId("q-goal").textContent = "Goal: " + q.goal + " · " + totalXP() + " / " + maxXp + " XP";
+  const box = byId("q-levels");
+  box.innerHTML = "";
+  q.levels.forEach((lv, i) => {
+    const st = levelStatus(i);
+    const d = document.createElement("div");
+    d.className = "lv " + st;
+    const n = document.createElement("div");
+    n.className = "n";
+    n.textContent = { accepted: "✓", active: "▶", needs_changes: "↻", locked: "🔒" }[st];
+    const t = document.createElement("div");
+    t.className = "t";
+    const s = document.createElement("strong");
+    s.textContent = "Level " + lv.number + ": " + lv.title;
+    const m = document.createElement("small");
+    if (st === "accepted") m.textContent = "Accepted · self-confirmed · +" + lv.xp + " XP";
+    else if (st === "locked") m.textContent = "Locked · finish Level " + (i) + " first";
+    else if (lv.placeholder) m.textContent = "Coming after this prototype";
+    else if (st === "needs_changes") m.textContent = "Needs changes · tap to fix";
+    else m.textContent = lv.minutes + " min · " + lv.xp + " XP";
+    t.append(s, m);
+    d.append(n, t);
+    d.addEventListener("click", () => openMission(i));
+    box.appendChild(d);
+  });
+}
+
+function checkLink(v) {
+  if (!v) return "Paste a link to your work.";
+  let u;
+  try { u = new URL(v); } catch (e) { return "That does not look like a web link. It should start with https://"; }
+  if (u.protocol !== "https:" && u.protocol !== "http:") return "Please use a normal web link starting with https://";
+  const h = u.hostname.toLowerCase();
+  if (!h.includes(".") || ["example.com", "test.com", "localhost"].includes(h)) return "Please paste the real link to your work.";
+  return "";
+}
+
+function openMission(i) {
+  const q = state.quest;
+  const lv = q.levels[i];
+  const st = levelStatus(i);
+  if (st === "locked") { toast("Finish Level " + i + " first. It unlocks this one."); return; }
+  missionIndex = i;
+  const p = state.progress[lv.id] || {};
+  const ev = lv.evidence;
+  const done = st === "accepted";
+
+  byId("m-xp").textContent = totalXP() + " XP";
+  byId("m-eyebrow").textContent = "LEVEL " + lv.number + " OF " + q.levels.length;
+  byId("m-title").textContent = lv.title;
+  byId("m-meta").textContent = lv.placeholder ? "Coming after this prototype" : lv.minutes + " min · " + lv.xp + " XP";
+  byId("m-objective").textContent = lv.objective;
+
+  const steps = byId("m-steps");
+  steps.innerHTML = "";
+  lv.instructions.forEach((t) => {
+    const li = document.createElement("li");
+    li.textContent = t;
+    steps.appendChild(li);
+  });
+  byId("m-steps-wrap").style.display = lv.instructions.length ? "block" : "none";
+
+  const res = byId("m-resources");
+  res.innerHTML = "";
+  if (lv.resources.length) {
+    const h = document.createElement("small");
+    h.className = "lbl";
+    h.textContent = "WHERE TO LEARN";
+    res.appendChild(h);
+    lv.resources.forEach((r) => {
+      const a = document.createElement("a");
+      a.className = "res";
+      a.href = "https://www.google.com/search?q=" + encodeURIComponent(r.search);
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+      a.textContent = "🔎 " + r.label;
+      res.appendChild(a);
+    });
+  }
+
+  // Evidence form
+  const card = byId("m-evidence-card");
+  const form = byId("m-form");
+  form.innerHTML = "";
+  byId("m-err").textContent = "";
+  byId("m-confirm").checked = done;
+  byId("m-confirm").disabled = done;
+  const status = byId("m-status");
+  status.className = "status-note";
+
+  if (ev.kind === "none") {
+    card.style.display = "none";
+    byId("m-submit").style.display = "none";
+    byId("m-next").style.display = "none";
+    status.textContent = "Finish the missions above to unlock harder ones. This level comes after the prototype.";
+    showScreen("screen-10");
+    return;
+  }
+  card.style.display = "block";
+  byId("m-prompt").textContent = ev.prompt;
+
+  if (ev.kind === "link") {
+    const inp = document.createElement("input");
+    inp.id = "m-in"; inp.className = "input"; inp.type = "url";
+    inp.placeholder = ev.link_hint || "https://...";
+    inp.value = typeof p.evidence === "string" ? p.evidence : "";
+    inp.disabled = done;
+    form.appendChild(inp);
+  } else if (ev.kind === "reflection") {
+    const ta = document.createElement("textarea");
+    ta.id = "m-in"; ta.className = "input"; ta.rows = 5;
+    ta.placeholder = "Write it in your own words…";
+    ta.value = typeof p.evidence === "string" ? p.evidence : "";
+    ta.disabled = done;
+    const count = document.createElement("small");
+    count.className = "count";
+    const upd = () => { count.textContent = ta.value.trim().length + " / at least " + (ev.min_chars || 100); };
+    ta.addEventListener("input", upd);
+    upd();
+    form.append(ta, count);
+  } else {
+    ev.items.forEach((text) => {
+      const row = document.createElement("label");
+      row.className = "chk-row";
+      const c = document.createElement("input");
+      c.type = "checkbox"; c.className = "m-chk"; c.checked = done; c.disabled = done;
+      const s = document.createElement("span");
+      s.textContent = text;
+      row.append(c, s);
+      form.appendChild(row);
+    });
+  }
+
+  if (done) {
+    const when = p.acceptedAt ? new Date(p.acceptedAt).toLocaleDateString() : "";
+    status.textContent = "✓ Accepted on " + when + " (self-confirmed). This prototype does not independently verify evidence.";
+    status.classList.add("good");
+  } else if (st === "needs_changes") {
+    status.textContent = "Needs changes: " + (p.feedback || "please review and resubmit.");
+    status.classList.add("warn");
+  } else {
+    status.textContent = "Not submitted yet.";
+  }
+
+  byId("m-submit").style.display = done ? "none" : "block";
+  byId("m-next").style.display = done ? "block" : "none";
+  showScreen("screen-10");
+}
+
+function submitEvidence() {
+  const q = state.quest;
+  const i = missionIndex;
+  const lv = q.levels[i];
+  const st = levelStatus(i);
+  if (st === "accepted" || st === "locked") return; // no double rewards, no skipping ahead
+  const ev = lv.evidence;
+  const prior = Object.entries(state.progress)
+    .filter(([id, p]) => id !== lv.id && p.status === "accepted")
+    .map(([, p]) => p.evidence);
+
+  const reject = (msg, draft) => {
+    state.progress[lv.id] = { status: "needs_changes", feedback: msg, evidence: draft };
+    writeSave({ progress: state.progress });
+    openMission(i);
+    byId("m-err").textContent = msg;
+  };
+
+  if (!byId("m-confirm").checked) {
+    byId("m-err").textContent = "Please confirm you really did this yourself.";
+    return;
+  }
+
+  let value;
+  if (ev.kind === "link") {
+    value = byId("m-in").value.trim();
+    const bad = checkLink(value);
+    if (bad) return reject(bad, value);
+    const norm = (s) => String(s).toLowerCase().replace(/\/$/, "");
+    if (prior.some((v) => typeof v === "string" && norm(v) === norm(value)))
+      return reject("You already used this link for another mission. Each mission needs its own proof.", value);
+  } else if (ev.kind === "reflection") {
+    value = byId("m-in").value.trim();
+    const need = ev.min_chars || 100;
+    if (value.length < need)
+      return reject("Write a little more: at least " + need + " characters (you have " + value.length + ").", value);
+    if (prior.some((v) => typeof v === "string" && v.toLowerCase() === value.toLowerCase()))
+      return reject("This looks the same as an earlier answer. Write about this mission.", value);
+  } else {
+    const boxes = [...document.querySelectorAll(".m-chk")];
+    if (!boxes.every((b) => b.checked)) {
+      byId("m-err").textContent = "Tick every step once you have really done it.";
+      return;
+    }
+    value = ev.items.slice();
+  }
+
+  state.progress[lv.id] = { status: "accepted", kind: ev.kind, evidence: value, acceptedAt: Date.now() };
+  writeSave({ progress: state.progress });
+  openMission(i);
+  celebrate(lv);
+}
+
+byId("m-submit").addEventListener("click", submitEvidence);
+byId("m-back").addEventListener("click", () => { renderQuestPreview(); showScreen("screen-9"); });
+byId("m-next").addEventListener("click", () => {
+  const next = missionIndex + 1;
+  if (next < state.quest.levels.length) openMission(next);
+  else { renderQuestPreview(); showScreen("screen-9"); }
+});

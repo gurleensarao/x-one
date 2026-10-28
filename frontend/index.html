@@ -276,10 +276,93 @@
 
   <div class="bottom">
     <button class="btn" id="copy-btn">Copy my message <span>⧉</span></button>
+    <button class="btn outline" id="to-quest">Start my quest <span>→</span></button>
     <p class="footnote">Make it sound like you. Send it when you're ready.</p>
   </div>
 </section>
+<!-- Screen 8: Choose your quest -->
+<section id="screen-8" class="screen form-screen mist">
+  <header class="topbar">
+    <button class="back" data-goto="screen-7">←</button>
+    <div class="brand">X-one<small>Expand Possibilities</small></div>
+    <span class="step">QUEST</span>
+  </header>
 
+  <div class="center">
+    <p class="eyebrow">✦ THE REAL ADVENTURE</p>
+    <h2 class="title wide">Choose your quest</h2>
+    <p class="muted">Behind the Lines showed what could be.<br>Now pick something real to do.</p>
+  </div>
+
+  <div id="goal-list"></div>
+  <p class="muted" id="goal-note"></p>
+
+  <label class="label">Or name your own goal</label>
+  <input id="goal-own" class="input" placeholder="e.g. Learn Python well enough to automate my reports">
+
+  <div class="bottom">
+    <p class="err" id="err-s8"></p>
+    <button class="btn" id="build-quest">Build my quest <span>→</span></button>
+    <p class="footnote">Real missions. Real proof. Your pace.</p>
+  </div>
+</section>
+
+<!-- Screen 9: quest preview (the journey map replaces this later) -->
+<section id="screen-9" class="screen form-screen mist">
+  <header class="topbar">
+    <button class="back" data-goto="screen-7">←</button>
+    <div class="brand">X-one<small>Expand Possibilities</small></div>
+    <span class="step">YOUR QUEST</span>
+  </header>
+
+  <div class="center">
+    <h2 class="title wide" id="q-title"></h2>
+    <p class="muted" id="q-goal"></p>
+  </div>
+
+  <div id="q-levels"></div>
+  <p class="footnote center">The journey map comes next.</p>
+</section>
+<!-- Screen 10: Mission -->
+<section id="screen-10" class="screen form-screen mist">
+  <header class="topbar">
+    <button class="back" id="m-back">←</button>
+    <div class="brand">X-one<small>Expand Possibilities</small></div>
+    <span class="step" id="m-xp"></span>
+  </header>
+
+  <div class="center">
+    <p class="eyebrow" id="m-eyebrow"></p>
+    <h2 class="title wide" id="m-title"></h2>
+    <p class="muted" id="m-meta"></p>
+  </div>
+
+  <article class="move-card">
+    <small class="lbl">OBJECTIVE</small>
+    <p id="m-objective"></p>
+    <div id="m-steps-wrap">
+      <small class="lbl">STEPS</small>
+      <ol id="m-steps"></ol>
+    </div>
+    <div id="m-resources"></div>
+  </article>
+
+  <article class="move-card" id="m-evidence-card">
+    <small class="lbl">YOUR EVIDENCE</small>
+    <p class="muted left" id="m-prompt"></p>
+    <div id="m-form"></div>
+    <label class="confirm"><input type="checkbox" id="m-confirm"> <span>I really did this myself.</span></label>
+    <p class="err" id="m-err"></p>
+  </article>
+
+  <p class="status-note" id="m-status"></p>
+
+  <div class="bottom">
+    <button class="btn" id="m-submit">Submit evidence</button>
+    <button class="btn outline" id="m-next" style="display:none">Next mission <span>→</span></button>
+    <p class="footnote">Prototype: evidence is self-confirmed and not independently verified.</p>
+  </div>
+</section>
   </main>
   <script src="data.js"></script>
   <script src="app.js"></script>
