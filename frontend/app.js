@@ -560,10 +560,7 @@ function toast(msg) {
   setTimeout(() => t.remove(), 2800);
 }
 
-// Step 8 will replace this with the big celebration
-function celebrate(lv) {
-  toast("MISSION COMPLETE! +" + lv.xp + " XP");
-}
+
 
 function levelStatus(i) {
   const q = state.quest;
@@ -583,36 +580,6 @@ function totalXP() {
   }, 0);
 }
 
-function renderQuestPreview() {
-  const q = state.quest;
-  const maxXp = q.levels.reduce((s, l) => s + l.xp, 0);
-  byId("q-title").textContent = q.title;
-  byId("q-goal").textContent = "Goal: " + q.goal + " · " + totalXP() + " / " + maxXp + " XP";
-  const box = byId("q-levels");
-  box.innerHTML = "";
-  q.levels.forEach((lv, i) => {
-    const st = levelStatus(i);
-    const d = document.createElement("div");
-    d.className = "lv " + st;
-    const n = document.createElement("div");
-    n.className = "n";
-    n.textContent = { accepted: "✓", active: "▶", needs_changes: "↻", locked: "🔒" }[st];
-    const t = document.createElement("div");
-    t.className = "t";
-    const s = document.createElement("strong");
-    s.textContent = "Level " + lv.number + ": " + lv.title;
-    const m = document.createElement("small");
-    if (st === "accepted") m.textContent = "Accepted · self-confirmed · +" + lv.xp + " XP";
-    else if (st === "locked") m.textContent = "Locked · finish Level " + (i) + " first";
-    else if (lv.placeholder) m.textContent = "Coming after this prototype";
-    else if (st === "needs_changes") m.textContent = "Needs changes · tap to fix";
-    else m.textContent = lv.minutes + " min · " + lv.xp + " XP";
-    t.append(s, m);
-    d.append(n, t);
-    d.addEventListener("click", () => openMission(i));
-    box.appendChild(d);
-  });
-}
 
 function checkLink(v) {
   if (!v) return "Paste a link to your work.";
@@ -795,4 +762,152 @@ byId("m-next").addEventListener("click", () => {
   const next = missionIndex + 1;
   if (next < state.quest.levels.length) openMission(next);
   else { renderQuestPreview(); showScreen("screen-9"); }
+});
+// ---------- Journey map ----------
+const MAP_W = 360, MAP_STEP = 130, MAP_TOP = 70;
+function nodePos(i) { return { x: i % 2 === 0 ? 100 : 260, y: MAP_TOP + i * MAP_STEP }; }
+
+function renderQuestPreview() {
+  const q = state.quest;
+  const maxXp = q.levels.reduce((s, l) => s + l.xp, 0);
+  const xp = totalXP();
+  byId("q-title").textContent = q.title;
+  byId("q-goal").textContent = "Goal: " + q.goal;
+  byId("q-xp-top").textContent = xp + " XP";
+  byId("xp-text").textContent = xp + " / " + maxXp + " XP";
+  const fill = byId("xp-fill");
+  requestAnimationFrame(() => { fill.style.width = (maxXp ? (xp / maxXp) * 100 : 0) + "%"; });
+
+  // Badges
+  const real = q.levels.filter((l) => !l.placeholder);
+  const done = real.filter((l) => (state.progress[l.id] || {}).status === "accepted").length;
+  const badges = [
+    { label: "🌱 First step", on: done >= 1 },
+    { label: "🔥 Halfway there", on: done > 0 && done >= Math.ceil(real.length / 2) },
+    { label: "🏆 Quest complete", on: real.length > 0 && done === real.length },
+  ];
+  const bx = byId("badges");
+  bx.innerHTML = "";
+  badges.forEach((b) => {
+    const s = document.createElement("span");
+    s.className = "badge" + (b.on ? " on" : "");
+    s.textContent = b.label;
+    bx.appendChild(s);
+  });
+
+  // Map and path
+  const n = q.levels.length;
+  const H = MAP_TOP * 2 + (n - 1) * MAP_STEP;
+  const map = byId("q-map");
+  map.style.height = H + "px";
+  map.innerHTML = "";
+  const NS = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(NS, "svg");
+  svg.setAttribute("viewBox", "0 0 " + MAP_W + " " + H);
+  svg.setAttribute("preserveAspectRatio", "none");
+  for (let i = 0; i < n - 1; i++) {
+    const a = nodePos(i), b = nodePos(i + 1), my = (a.y + b.y) / 2;
+    const p = document.createElementNS(NS, "path");
+    p.setAttribute("d", "M" + a.x + "," + a.y + " C" + a.x + "," + my + " " + b.x + "," + my + " " + b.x + "," + b.y);
+    p.setAttribute("class", "seg" + (levelStatus(i) === "accepted" ? " done" : ""));
+    svg.appendChild(p);
+  }
+  map.appendChild(svg);
+
+  // Nodes
+  const hereIdx = q.levels.findIndex((lv, i) => ["active", "needs_changes"].includes(levelStatus(i)) && !lv.placeholder);
+  q.levels.forEach((lv, i) => {
+    const st = levelStatus(i);
+    const pos = nodePos(i);
+    const d = document.createElement("div");
+    d.className = "node " + st + (state.justUnlocked === lv.id ? " pop" : "");
+    d.style.left = (pos.x / MAP_W) * 100 + "%";
+    d.style.top = pos.y + "px";
+
+    if (i === hereIdx) {
+      const h = document.createElement("div");
+      h.className = "here";
+      h.textContent = "✦ YOU ARE HERE";
+      d.appendChild(h);
+    }
+    const orb = document.createElement("div");
+    orb.className = "orb";
+    orb.textContent = lv.placeholder && st !== "locked" ? "⚑" :
+      { accepted: "✓", active: "▶", needs_changes: "↻", locked: "🔒" }[st];
+    const lab = document.createElement("div");
+    lab.className = "lab";
+    lab.textContent = lv.title;
+    const sm = document.createElement("small");
+    if (st === "accepted") sm.textContent = "Accepted · +" + lv.xp + " XP";
+    else if (st === "locked") sm.textContent = "Locked";
+    else if (lv.placeholder) sm.textContent = "Coming soon";
+    else sm.textContent = lv.minutes + " min · " + lv.xp + " XP";
+    d.append(orb, lab, sm);
+    d.addEventListener("click", () => openMission(i));
+    map.appendChild(d);
+  });
+  state.justUnlocked = null;
+
+  // What's next
+  const nextIdx = q.levels.findIndex((lv, i) => levelStatus(i) !== "accepted");
+  const nxt = byId("q-next");
+  nxt.className = "status-note";
+  if (done === real.length && real.length > 0) {
+    nxt.textContent = "🏆 Every mission in this quest is complete. Harder missions unlock after this prototype.";
+    nxt.classList.add("good");
+  } else if (nextIdx >= 0) {
+    nxt.textContent = "Next: Level " + q.levels[nextIdx].number + " · " + q.levels[nextIdx].title;
+  }
+}
+
+// ---------- Celebration ----------
+function celebrate(lv) {
+  const i = state.quest.levels.findIndex((l) => l.id === lv.id);
+  const next = state.quest.levels[i + 1];
+  state.justUnlocked = next ? next.id : null;
+
+  const box = byId("celebrate");
+  box.querySelectorAll(".spark").forEach((s) => s.remove());
+  byId("cel-sub").textContent = "Level " + lv.number + ": " + lv.title;
+  byId("cel-xp").textContent = "+0 XP";
+  byId("cel-unlock").textContent = next
+    ? (next.placeholder ? "🏆 You finished every mission in this quest!" : "🔓 Level " + next.number + " unlocked: " + next.title)
+    : "";
+
+  box.classList.remove("show");
+  void box.offsetWidth; // restart the animations
+  box.classList.add("show");
+
+  // XP counts up
+  setTimeout(() => {
+    const el = byId("cel-xp"), t0 = performance.now(), dur = 1100;
+    (function tick(t) {
+      const k = Math.min(1, (t - t0) / dur);
+      el.textContent = "+" + Math.round(lv.xp * k) + " XP";
+      if (k < 1) requestAnimationFrame(tick);
+    })(t0);
+  }, 700);
+
+  // Sparkle burst
+  const colors = ["#ffffff", "#cbb8f5", "#7ee8d6"];
+  for (let k = 0; k < 64; k++) {
+    const s = document.createElement("span");
+    s.className = "spark";
+    const ang = Math.random() * Math.PI * 2, dist = 90 + Math.random() * 190;
+    s.style.setProperty("--dx", Math.cos(ang) * dist + "px");
+    s.style.setProperty("--dy", Math.sin(ang) * dist + "px");
+    s.style.background = colors[k % 3];
+    s.style.animationDelay = Math.random() * 0.5 + "s";
+    box.appendChild(s);
+  }
+}
+
+byId("cel-btn").addEventListener("click", () => {
+  byId("celebrate").classList.remove("show");
+  renderQuestPreview();
+  showScreen("screen-9");
+  setTimeout(() => {
+    const t = document.querySelector(".node.pop") || document.querySelector(".node.active");
+    if (t) t.scrollIntoView({ block: "center", behavior: "smooth" });
+  }, 150);
 });

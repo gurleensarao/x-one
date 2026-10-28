@@ -307,21 +307,26 @@
   </div>
 </section>
 
-<!-- Screen 9: quest preview (the journey map replaces this later) -->
+<!-- Screen 9: Journey map -->
 <section id="screen-9" class="screen form-screen mist">
   <header class="topbar">
     <button class="back" data-goto="screen-7">←</button>
     <div class="brand">X-one<small>Expand Possibilities</small></div>
-    <span class="step">YOUR QUEST</span>
+    <span class="step" id="q-xp-top"></span>
   </header>
 
   <div class="center">
+    <p class="eyebrow">✦ YOUR JOURNEY MAP</p>
     <h2 class="title wide" id="q-title"></h2>
     <p class="muted" id="q-goal"></p>
   </div>
 
-  <div id="q-levels"></div>
-  <p class="footnote center">The journey map comes next.</p>
+  <div class="xpbar"><div class="xpfill" id="xp-fill"></div></div>
+  <p class="xp-text" id="xp-text"></p>
+  <div class="badges" id="badges"></div>
+
+  <div class="map" id="q-map"></div>
+  <p class="status-note" id="q-next"></p>
 </section>
 <!-- Screen 10: Mission -->
 <section id="screen-10" class="screen form-screen mist">
@@ -363,6 +368,16 @@
     <p class="footnote">Prototype: evidence is self-confirmed and not independently verified.</p>
   </div>
 </section>
+<!-- Mission complete celebration -->
+<div class="celebrate" id="celebrate" role="dialog" aria-live="polite">
+  <div class="ring"></div><div class="ring r2"></div><div class="ring r3"></div>
+  <p class="cel-woo">WOOHOO!</p>
+  <h2 class="cel-title">MISSION<br>COMPLETE!</h2>
+  <p class="cel-sub" id="cel-sub"></p>
+  <p class="cel-xp" id="cel-xp">+0 XP</p>
+  <p class="cel-unlock" id="cel-unlock"></p>
+  <button class="btn" id="cel-btn">See my map <span>→</span></button>
+</div>
   </main>
   <script src="data.js"></script>
   <script src="app.js"></script>
