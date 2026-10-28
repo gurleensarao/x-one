@@ -391,18 +391,32 @@ function restoreFromSave() {
     showScreen("screen-4");
   }
 }
+// ---------- Continue / Start over buttons (built by code, so they always land on Screen 1) ----------
+function buildContinueButtons() {
+  // remove any old copies, wherever they ended up
+  document.querySelectorAll("#continue-btn, #reset-btn").forEach((el) => el.remove());
 
-// Show the Continue and Start over buttons only if something is saved
-(function () {
-  const s = loadSave();
-  if (s.story) {
-    document.getElementById("continue-btn").style.display = "block";
-    document.getElementById("reset-btn").style.display = "block";
-  }
-})();
+  const bottom = document.querySelector("#screen-1 .bottom");
+  const startBtn = bottom.querySelector('[data-goto="screen-2"]');
 
-document.getElementById("continue-btn").addEventListener("click", restoreFromSave);
-document.getElementById("reset-btn").addEventListener("click", () => {
-  clearSave();
-  location.reload();
-});
+  const cont = document.createElement("button");
+  cont.id = "continue-btn";
+  cont.className = "btn outline";
+  cont.innerHTML = "Continue my journey <span>→</span>";
+  cont.addEventListener("click", restoreFromSave);
+
+  const reset = document.createElement("button");
+  reset.id = "reset-btn";
+  reset.type = "button";
+  reset.className = "link-btn";
+  reset.textContent = "Start over";
+  reset.addEventListener("click", () => { clearSave(); location.reload(); });
+
+  startBtn.after(cont, reset);
+
+  const show = loadSave().story ? "block" : "none";
+  cont.style.display = show;
+  reset.style.display = show;
+}
+buildContinueButtons();
+window.addEventListener("pageshow", buildContinueButtons);
