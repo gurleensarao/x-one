@@ -10,7 +10,7 @@ document.querySelectorAll("[data-goto]").forEach((btn) => {
 });
 
 // ---------- App state (what the user chose) ----------
-const state = { openPath: null, chosenPath: null, inputs: {} };
+const state = { openPath: null, chosenPath: null, inputs: {}};
 
 // Tap a blocker chip on/off
 document.querySelectorAll("#blockers .chip").forEach((chip) => {
