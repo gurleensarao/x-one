@@ -11,7 +11,8 @@
       ".src-note{font-size:12px;text-align:center;margin:-6px 0 4px}.src-note.ai{color:#7ee8d6}.src-note.fb{color:#ffb86b}" +
       ".care{position:fixed;top:0;bottom:0;left:50%;width:100%;max-width:430px;transform:translateX(-50%);z-index:100000;display:none;align-items:center;justify-content:center;padding:24px;background:rgba(5,5,12,.92)}" +
       ".care.show{display:flex}.care .box{background:rgba(24,20,48,.98);border:1px solid var(--lavender);border-radius:20px;padding:24px;text-align:left;box-shadow:0 0 30px rgba(157,132,224,.4)}" +
-      ".care h3{font-family:var(--font-title);font-weight:500;font-size:28px;margin-bottom:10px}.care p{font-size:14px;line-height:1.55;color:#d6d0ec;margin-bottom:10px}.care .btn{margin-top:8px}";
+      ".care h3{font-family:var(--font-title);font-weight:500;font-size:28px;margin-bottom:10px}.care p{font-size:14px;line-height:1.55;color:#d6d0ec;margin-bottom:10px}.care .btn{margin-top:8px}" +
+      "#skills .chip{cursor:pointer;padding:10px 14px}#skills .chip .x{font-size:18px;padding-left:6px;line-height:1}";
     document.head.appendChild(st);
   }
 
@@ -62,6 +63,29 @@
       injectStyles();
       buildCare();
       fixCounters();
+
+      // Quietly wake the free backend while the person fills in the forms
+      try {
+        if (typeof API_BASE !== "undefined") fetch(API_BASE + "/health", { cache: "no-store" }).catch(function () {});
+      } catch (e) {}
+
+      // Skills: tap anywhere on a chip to remove it (not only the small x)
+      const skillsBox = document.getElementById("skills");
+      if (skillsBox) {
+        skillsBox.addEventListener("click", (e) => {
+          if (e.target.classList.contains("x")) return; // the x already handled it
+          const chip = e.target.closest(".chip");
+          if (!chip || !chip.firstChild) return;
+          const label = chip.firstChild.textContent;
+          const i = skillList.indexOf(label);
+          if (i >= 0) { skillList.splice(i, 1); renderSkills(); }
+        });
+        const hint = document.createElement("p");
+        hint.className = "muted left";
+        hint.style.cssText = "font-size:12px;margin-top:6px";
+        hint.textContent = "Tap a skill to remove it. Type a new one below and press Add.";
+        skillsBox.after(hint);
+      }
 
       // Check what the person wrote before it is sent to the AI
       const baseLoad = loadStory;

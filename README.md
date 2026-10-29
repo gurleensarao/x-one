@@ -10,9 +10,16 @@ X-one helps someone at a career crossroads do two things:
 > The main journey is about doing. Behind the Lines is about exploring what could be.
 
 ## Links
-- Live app: https://dashing-klepon-794034.netlify.app/
-- Backend API (docs): https://x-one-api.onrender.com/docs
-- Demo video: <ADD LINK>
+- **Live app:** https://xoneplottwist.netlify.app/
+- **GitHub:** https://github.com/gurleensarao/x-one
+- **Demo video:** <<FILL: paste your video link>>
+- Backend API docs: https://x-one-api.onrender.com/docs
+
+## Try it in 2 minutes
+1. Open the live app. (The AI server sleeps when idle and wakes when the page opens, so the very first story can take up to a minute.)
+2. Press **Start**, then **Try it with an example story (Aarav)**, and go through the screens.
+3. On the last journey screen press **Start my quest**, make an avatar, pick a goal, and press **Build my quest**.
+4. Open Level 1, submit your evidence, and watch the level unlock.
 
 ## The journey
 1. **Character Sheet:** name, age, qualification, job, skills
@@ -45,13 +52,14 @@ X-one helps someone at a career crossroads do two things:
 Browser (Netlify)  ->  FastAPI on Render  ->  Gemini API  ->  validated JSON  ->  screens
 ```
 
-If the AI is slow, unavailable or over its daily limit, the app falls back to a hand-written example story and quest (Aarav) and says so on screen.
+If the AI is slow, unavailable or over its daily limit, the app falls back to a hand-written example story and quest (Aarav) and **says so on screen**.
 
 ## AI use (disclosure)
 - **Claude (Anthropic)** was used as an AI assistant for planning, prompt design and code help while building this project. The author ran, tested and edited everything.
 - **Gemini** writes the personalised content inside the app at run time (paths, scenes, goals, missions, first move).
 - The mission AI never writes links: learning resources are shown as search phrases and opened as ordinary web searches.
-- Fonts: Google Fonts (Cormorant Garamond, Inter). Artwork: <ADD SOURCE OF THE FOUR BACKGROUND IMAGES>. The avatar is drawn in code (SVG) for this prototype.
+- Fonts: Google Fonts (Cormorant Garamond, Inter).
+- Artwork: The four background images were made, for example "generated and arranged in Figma", or the stock site and licence>>. The avatar is drawn in code (SVG) for this prototype.
 
 ## Responsible-AI choices
 - Scenes are *possibilities, not predictions*, and say so on screen.
@@ -63,8 +71,8 @@ If the AI is slow, unavailable or over its daily limit, the app falls back to a 
 ## Honest limitations
 - Progress is stored only in the user's browser. Clearing data or switching device loses it.
 - Evidence is self-confirmed and not verified by anyone.
-- Render's free plan sleeps when idle, so the first request can take up to a minute.
-- The distress check is keyword-based and English plus a few Hindi words.
+- Render's free plan sleeps when idle, so the first request can take up to a minute. The page pings the server when it opens to wake it early.
+- The distress check is keyword-based and covers English plus a few Hindi words.
 - Avatar options are limited and drawn with simple shapes.
 - Mission quality depends on the AI; the first level is always designed to be a short, doable step.
 
@@ -75,10 +83,9 @@ cd backend
 python -m venv venv
 venv\Scripts\activate          # Windows (macOS/Linux: source venv/bin/activate)
 pip install -r requirements.txt
-# create backend/.env  (see .env.example)
+# create backend/.env  (see backend/.env.example)
 python -m uvicorn main:app --reload
 ```
-Open http://127.0.0.1:8000/docs to try the routes.
 
 **Frontend:** open `frontend/index.html` in a browser. When opened from a file or from localhost it talks to your local backend automatically; anywhere else it talks to the Render backend.
 
@@ -90,7 +97,7 @@ Open http://127.0.0.1:8000/docs to try the routes.
 ```
 x-one/
 ├── frontend/   index.html, style.css, app.js, data.js, avatar.js, safety.js, assets/
-├── backend/    main.py (routes, daily limit), llm.py (prompts, Gemini call, validation), requirements.txt
+├── backend/    main.py (routes, daily limit), llm.py (prompts, Gemini call, validation), requirements.txt, .env.example
 ├── netlify.toml
 └── README.md
 ```
