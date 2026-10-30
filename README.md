@@ -12,7 +12,7 @@ X-one helps someone at a career crossroads do two things:
 ## Links
 - **Live app:** https://xoneplottwist.netlify.app/
 - **GitHub:** https://github.com/gurleensarao/x-one
-- **Demo video:** https://youtu.be/ovSc6W1GkoI?si=33oZQsHCMP2hAW4J
+- **Demo video:**https://www.loom.com/share/e5410979d60d4b3d9f2029d14865bf35
 - Backend API docs: https://x-one-api.onrender.com/docs
 
 ## Try it in 2 minutes
